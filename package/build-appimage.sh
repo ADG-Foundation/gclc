@@ -3,9 +3,25 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Detect machine architecture
+RAW_ARCH="$(uname -m)"
+case "${RAW_ARCH}" in
+  x86_64)
+    ARCH="x86_64"
+    ;;
+  aarch64|arm64)
+    ARCH="aarch64"
+    ;;
+  *)
+    echo "Unsupported architecture: ${RAW_ARCH}" && exit 1
+    ;;
+esac
+export ARCH
+echo ">>> Detected target architecture: ${ARCH}"
+
 # Paths inside the container
-QT_INSTALL_DIR="/cache/qtStatic"
-GCLC_BUILD_DIR="/cache/gclc-build"
+QT_INSTALL_DIR="/cache/qtStatic-${ARCH}"
+GCLC_BUILD_DIR="/cache/gclc-build-${ARCH}"
 APPDIR="/tmp/AppDir"
 OUT_DIR="/out"
 SRC_DIR="/app-src"
@@ -29,7 +45,7 @@ apt-get update && apt-get install -y --no-install-recommends \
 if [ -f "${QT_INSTALL_DIR}/bin/qt-cmake" ]; then
   echo ">>> [Cache Hit] Found static Qt installation at ${QT_INSTALL_DIR}. Skipping Qt build."
 else
-  echo ">>> [Cache Miss] Compiling static Qt 6.5.2..."
+  echo ">>> [Cache Miss] Compiling static Qt 6.5.2 for ${ARCH}..."
 
   QT_TMP_BUILD="/tmp/qt-build"
   rm -rf "${QT_TMP_BUILD}"
@@ -50,7 +66,6 @@ else
   cmake --build . --parallel "$(nproc)"
   cmake --install .
 
-  # Cleanup
   cd /
   rm -rf "${QT_TMP_BUILD}"
 fi
@@ -62,29 +77,26 @@ echo ">>> 2. Building GCLC GUI..."
 rm -rf "${APPDIR}"
 mkdir -p "${APPDIR}/usr"
 
-# Clean scratch space for source files
 GCLC_SRC_SHADOW="/tmp/gclc-src"
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
 echo ">>> Copying project source files..."
-# Copy only the relevant files to a writeable location.
-# Needed for generating Version.h
 cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
-cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"
+if [ -d "${SRC_DIR}/flatpak" ]; then cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"; fi
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 
 cd "${GCLC_SRC_SHADOW}"
 
-# Generate Version.h inside the writeable source shadow
-VERSION_STR="${APP_VERSION:-$(git describe --tags 2>/dev/null || echo "dev")}"
+# Generate Version.h
+RAW_VER="${APP_VERSION:-dev}"
+VERSION_STR="$(echo "${RAW_VER}" | sed 's/^v//; s/_/-/g')"
 mkdir -p source/Utils
 cat <<EOF > source/Utils/Version.h
 #pragma once
 #define GCLC_VERSION "${VERSION_STR}"
 EOF
 
-# Build in the persistent cache directory so incremental compilation still works
 mkdir -p "${GCLC_BUILD_DIR}"
 "${QT_INSTALL_DIR}/bin/qt-cmake" -B "${GCLC_BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" -DCMAKE_BUILD_TYPE=Release
 cmake --build "${GCLC_BUILD_DIR}" --parallel "$(nproc)"
@@ -98,12 +110,19 @@ echo ">>> 3. Packaging into AppImage..."
 WORKDIR_DEPLOY="/tmp/linuxdeploy"
 mkdir -p "${WORKDIR_DEPLOY}" && cd "${WORKDIR_DEPLOY}"
 
-wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-chmod +x linuxdeploy-x86_64.AppImage
-./linuxdeploy-x86_64.AppImage --appimage-extract > /dev/null
+# Download architecture-matching linuxdeploy
+wget -q "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${ARCH}.AppImage"
+chmod +x "linuxdeploy-${ARCH}.AppImage"
+"./linuxdeploy-${ARCH}.AppImage" --appimage-extract > /dev/null
+
+# Pre-fetch runtime to prevent runner download failure
+RUNTIME_FILE="${WORKDIR_DEPLOY}/runtime-${ARCH}"
+wget -q -O "${RUNTIME_FILE}" "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-${ARCH}"
 
 export APPIMAGE_EXTRACT_AND_RUN=1
+export LINUXDEPLOY_OUTPUT_VERSION="${VERSION_STR}"
 export VERSION="${VERSION_STR}"
+export APPIMAGETOOL_ARGUMENTS="--runtime-file ${RUNTIME_FILE}"
 
 mkdir -p "${OUT_DIR}"
 cd "${OUT_DIR}"
@@ -115,15 +134,15 @@ cd "${OUT_DIR}"
   --output appimage
 
 # If linuxdeploy created a non-versioned AppImage, rename to ensure consistent naming
-if [ -f "GCLC-x86_64.AppImage" ]; then
-  mv "GCLC-x86_64.AppImage" "GCLC-${VERSION_STR}-x86_64.AppImage"
+if [ -f "GCLC-${ARCH}.AppImage" ]; then
+  mv "GCLC-${ARCH}.AppImage" "GCLC-${VERSION_STR}-${ARCH}.AppImage"
 fi
 
-# Restore ownership of output and cache files to the host user
+# Restore host permissions
 if [ -n "${HOST_UID:-}" ] && [ -n "${HOST_GID:-}" ]; then
-  chown -R "${HOST_UID}:${HOST_GID}" "${OUT_DIR}"
+  chown -hR "${HOST_UID}:${HOST_GID}" "${OUT_DIR}" || true
   if [ -d "/cache" ]; then
-    chown -R "${HOST_UID}:${HOST_GID}" "/cache" || true
+    chown -hR "${HOST_UID}:${HOST_GID}" "/cache" || true
   fi
 fi
 
