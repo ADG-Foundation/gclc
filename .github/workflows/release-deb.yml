@@ -7,7 +7,16 @@ on:
 
 jobs:
   build-deb:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+      fail-fast: false
+
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
 

@@ -8,8 +8,17 @@ OUT_DIR="/out"
 BUILD_DIR="/tmp/gclc-deb-build"
 GCLC_SRC_SHADOW="/tmp/gclc-src"
 
-CLEAN_VER="${APP_VERSION#v}" # Shell built-in, strips leading 'v'
-CLEAN_VER="${CLEAN_VER//_/-}" # Replaces '_' with '-'
+# 1. Standardize version string
+# - Strip leading 'v'
+# - Replace underscores and git-describe hyphens with dots/pluses for Debian packaging policy
+RAW_VER="${APP_VERSION:-dev}"
+CLEAN_VER="${RAW_VER#v}"
+CLEAN_VER="${CLEAN_VER//_/-}"
+# Debian version numbers can only have one hyphen before the debian revision.
+# If git describe gave e.g. 2026.08-12-g92498c0, turn it into 2026.08+12.g92498c0
+CLEAN_VER="$(echo "${CLEAN_VER}" | sed -E 's/-([0-9]+)-g([0-9a-f]+)/+\1.\2/')"
+
+echo ">>> Target version: ${CLEAN_VER}"
 
 echo ">>> 1. Installing Debian build tools and Qt6 packages..."
 apt-get update && apt-get install -y --no-install-recommends \
@@ -30,11 +39,11 @@ cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 
 cd "${GCLC_SRC_SHADOW}"
 
-VERSION_STR="${APP_VERSION:-$(git describe --tags 2>/dev/null || echo "dev")}"
+# Generate Version.h using the exact same sanitized version
 mkdir -p source/Utils
 cat <<EOF > source/Utils/Version.h
 #pragma once
-#define GCLC_VERSION "${VERSION_STR}"
+#define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
 echo ">>> 3. Configuring and building GCLC..."

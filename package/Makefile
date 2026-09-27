@@ -12,6 +12,17 @@ DOCKER_ARCH ?= archlinux:latest
 HOST_UID := $(shell id -u)
 HOST_GID := $(shell id -g)
 
+# Architecture handling (defaults to current host machine)
+ARCH ?= $(shell uname -m)
+
+ifeq ($(ARCH),aarch64)
+  DOCKER_PLATFORM := linux/arm64
+else ifeq ($(ARCH),arm64)
+  DOCKER_PLATFORM := linux/arm64
+else
+  DOCKER_PLATFORM := linux/amd64
+endif
+
 .PHONY: help appimage deb rpm pacman clean-cache clean-dist
 
 help:
@@ -25,6 +36,7 @@ help:
 appimage:
 	@mkdir -p "$(OUT_DIR)" "$(CACHE_DIR)"
 	docker run --rm \
+	  --platform $(DOCKER_PLATFORM) \
 	  -v "$(REPO_ROOT):/app-src:ro" \
 	  -v "$(MAKEFILE_DIR)/build-appimage.sh:/build-appimage.sh:ro" \
 	  -v "$(OUT_DIR):/out" \
@@ -37,6 +49,7 @@ appimage:
 deb:
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
+	  --platform $(DOCKER_PLATFORM) \
 	  -v "$(REPO_ROOT):/app-src:ro" \
 	  -v "$(MAKEFILE_DIR)/build-deb.sh:/build-deb.sh:ro" \
 	  -v "$(OUT_DIR):/out" \
@@ -48,6 +61,7 @@ deb:
 rpm:
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
+      --platform $(DOCKER_PLATFORM) \
 	  -v "$(REPO_ROOT):/app-src:ro" \
 	  -v "$(MAKEFILE_DIR)/build-rpm.sh:/build-rpm.sh:ro" \
 	  -v "$(OUT_DIR):/out" \
@@ -59,6 +73,7 @@ rpm:
 pacman:
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
+      --platform $(DOCKER_PLATFORM) \
 	  -v "$(REPO_ROOT):/app-src:ro" \
 	  -v "$(MAKEFILE_DIR)/build-pacman.sh:/build-pacman.sh:ro" \
 	  -v "$(OUT_DIR):/out" \
