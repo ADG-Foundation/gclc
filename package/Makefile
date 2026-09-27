@@ -6,12 +6,13 @@ CACHE_DIR    ?= $(REPO_ROOT)/.build-cache
 OUT_DIR      ?= $(REPO_ROOT)/dist
 
 DOCKER_UBUNTU ?= ubuntu:22.04
-DOCKER_FEDORA   ?= fedora:latest
+DOCKER_FEDORA ?= fedora:latest
+DOCKER_ARCH ?= archlinux:latest
 
 HOST_UID := $(shell id -u)
 HOST_GID := $(shell id -g)
 
-.PHONY: help appimage deb rpm clean-cache clean-dist
+.PHONY: help appimage deb rpm pacman clean-cache clean-dist
 
 help:
 	@echo "Available packaging targets:"
@@ -54,6 +55,17 @@ rpm:
 	  -e HOST_UID="$(HOST_UID)" \
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_FEDORA) /build-rpm.sh
+
+pacman:
+	@mkdir -p "$(OUT_DIR)"
+	docker run --rm \
+	  -v "$(REPO_ROOT):/app-src:ro" \
+	  -v "$(MAKEFILE_DIR)/build-pacman.sh:/build-pacman.sh:ro" \
+	  -v "$(OUT_DIR):/out" \
+	  -e APP_VERSION="$(VERSION)" \
+	  -e HOST_UID="$(HOST_UID)" \
+	  -e HOST_GID="$(HOST_GID)" \
+	  $(DOCKER_ARCH) /build-pacman.sh
 
 clean-dist:
 	rm -rf "$(OUT_DIR)"

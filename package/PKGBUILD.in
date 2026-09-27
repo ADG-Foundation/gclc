@@ -1,0 +1,24 @@
+# Maintainer: ADG Foundation
+pkgname=gclc
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc="Geometry Constructions -> LaTeX Converter"
+arch=('x86_64')
+url="https://github.com/ADG-Foundation/gclc"
+license=('MIT')
+depends=('qt6-base' 'hicolor-icon-theme')
+makedepends=('cmake' 'gcc')
+options=('!debug')
+
+build() {
+  cmake -B "${srcdir}/build" -S "${srcdir}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -Dgui=ON
+  cmake --build "${srcdir}/build" --parallel "$(nproc)"
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install "${srcdir}/build"
+  rm -f "${pkgdir}/usr/bin/gclc"
+}
