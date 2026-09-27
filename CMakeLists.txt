@@ -127,8 +127,7 @@ set(CPACK_PACKAGE_NAME "gclc")
 set(CPACK_PACKAGE_VENDOR "ADG Foundation")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Geometry Constructions -> LaTeX Converter and theorem prover")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ADG-Foundation/gclc")
-set(CPACK_PACKAGE_CONTACT "TODO: add")
-#set(CPACK_PACKAGE_CONTACT "Predrag Janicic <janicic@matf.bg.ac.rs>")
+set(CPACK_PACKAGE_CONTACT "Predrag Janicic <janicic@matf.bg.ac.rs>")
 
 # 2. Debian (.deb) Settings
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
