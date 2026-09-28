@@ -23,7 +23,7 @@ else
   DOCKER_PLATFORM := linux/amd64
 endif
 
-.PHONY: help appimage deb rpm pacman clean-cache clean-dist
+.PHONY: help appimage deb rpm pacman windows clean-cache clean-dist
 
 help:
 	@echo "Available packaging targets:"
@@ -81,6 +81,18 @@ pacman:
 	  -e HOST_UID="$(HOST_UID)" \
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_ARCH) /build-pacman.sh
+
+windows:
+	@mkdir -p "$(OUT_DIR)" "$(CACHE_DIR)"
+	docker run --rm \
+	  -v "$(REPO_ROOT):/app-src:ro" \
+	  -v "$(MAKEFILE_DIR)/build-windows.sh:/build-windows.sh:ro" \
+	  -v "$(OUT_DIR):/out" \
+	  -v "$(CACHE_DIR):/cache" \
+	  -e APP_VERSION="$(VERSION)" \
+	  -e HOST_UID="$(HOST_UID)" \
+	  -e HOST_GID="$(HOST_GID)" \
+	  $(DOCKER_UBUNTU) /build-windows.sh
 
 clean-dist:
 	rm -rf "$(OUT_DIR)"
