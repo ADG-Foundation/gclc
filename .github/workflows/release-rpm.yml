@@ -1,4 +1,4 @@
-namebuild-windows.shbuild-windows.sh: Build RPM Package for Release
+name: Build RPM Package for Release
 
 on:
   release:
