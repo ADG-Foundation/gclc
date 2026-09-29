@@ -86,17 +86,18 @@ if [ ! -f "${MACDEPLOYQT}" ]; then
 fi
 
 # Detect Homebrew lib directory (Apple Silicon vs Intel)
-BREW_LIB=""
-if command -v brew &>/dev/null; then
-  BREW_LIB="$(brew --prefix)/lib"
-fi
+#BREW_LIB=""
+#if command -v brew &>/dev/null; then
+#  BREW_LIB="$(brew --prefix)/lib"
+#fi
 
-DEPLOY_FLAGS=("-dmg")
-if [ -n "${BREW_LIB}" ] && [ -d "${BREW_LIB}" ]; then
-  DEPLOY_FLAGS+=("-libpath=${BREW_LIB}")
-fi
+#DEPLOY_FLAGS=("-dmg")
+#if [ -n "${BREW_LIB}" ] && [ -d "${BREW_LIB}" ]; then
+#  DEPLOY_FLAGS+=("-libpath=${BREW_LIB}")
+#fi
 
-"${MACDEPLOYQT}" "${APP_BUNDLE}" "${DEPLOY_FLAGS[@]}"
+#"${MACDEPLOYQT}" "${APP_BUNDLE}" "${DEPLOY_FLAGS[@]}"
+"${MACDEPLOYQT}" "${APP_BUNDLE}" -no-plugins -dmg
 
 # Re-sign the app bundle with ad-hoc signing to ensure Gatekeeper integrity
 echo ">>> Applying ad-hoc codesign to bundle..."
