@@ -10,7 +10,7 @@ BUILD_DIR="/tmp/gclc-win-build"
 GCLC_SRC_SHADOW="/tmp/gclc-src"
 MXE_DIR="/cache/mxe"
 
-echo ">>> 1. Installing build dependencies and NSIS..."
+echo ">>> Installing build dependencies and NSIS..."
 apt-get update && apt-get install -y --no-install-recommends \
   autoconf automake autopoint bash bison build-essential bzip2 flex \
   g++ g++-multilib gettext git gperf intltool iputils-ping libc6-dev-i386 \
@@ -18,7 +18,7 @@ apt-get update && apt-get install -y --no-install-recommends \
   libxml-parser-perl lzip make openssl p7zip-full patch perl \
   pkg-config ruby scons sed unzip wget xz-utils libgl-dev \
   python3 python3-mako python3-setuptools python-is-python3 \
-  nsis file ca-certificates
+  nsis file ca-certificates imagemagick
 
 # ---------------------------------------------------------
 # Phase 1: Build or Reuse MXE Qt6 Toolchain
@@ -39,7 +39,7 @@ export PATH="${MXE_DIR}/usr/bin:${PATH}"
 # ---------------------------------------------------------
 # Phase 2: Whitelist sources & Compile Binaries
 # ---------------------------------------------------------
-echo ">>> 2. Preparing source files..."
+echo ">>> Preparing source files..."
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
@@ -59,6 +59,13 @@ cat <<EOF > source/Utils/Version.h
 #define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
+convert "${SRC_DIR}/flatpak/icon/32.png" \
+        "${SRC_DIR}/flatpak/icon/64.png" \
+        "${SRC_DIR}/flatpak/icon/128.png" \
+        "${SRC_DIR}/flatpak/icon/256.png" \
+        "${GCLC_SRC_SHADOW}/source/app.ico"
+
+
 echo ">>> 3. Compiling Windows executables with MinGW..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
@@ -72,14 +79,15 @@ x86_64-w64-mingw32.static-cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
 # ---------------------------------------------------------
 # Phase 3: Package Installer with NSIS
 # ---------------------------------------------------------
-echo ">>> 4. Creating NSIS installer..."
+echo ">>> Creating NSIS installer..."
 STAGE_DIR="/tmp/gclc-installer-stage"
 rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}/executable"
 
-# Stage the executables for installer.nsi
+# Stage the executables and icon for NSIS
 cp "${BUILD_DIR}/gclc.exe" "${STAGE_DIR}/executable/"
 cp "${BUILD_DIR}/source/gclc-gui.exe" "${STAGE_DIR}/executable/"
+cp "${GCLC_SRC_SHADOW}/source/app.ico" "${STAGE_DIR}/app.ico"
 cp "${SRC_DIR}/package/installer.nsi" "${STAGE_DIR}/"
 
 cd "${STAGE_DIR}"

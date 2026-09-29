@@ -121,4 +121,9 @@ if(gui)
     )
   endforeach ()
 
+  if(WIN32)
+    target_sources(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gclc.rc")
+    target_include_directories(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+
 endif()
