@@ -126,4 +126,24 @@ if(gui)
     target_include_directories(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   endif()
 
+  if(APPLE)
+    # Enable macOS App Bundle creation
+    set_target_properties(gclc-gui PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_BUNDLE_NAME "GCLC"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.ADG_Foundation.gclc"
+            MACOSX_BUNDLE_ICON_FILE "GCLC.icns"
+            MACOSX_BUNDLE_SHORT_VERSION_STRING "${GCLC_VERSION}"
+            MACOSX_BUNDLE_BUNDLE_VERSION "${GCLC_VERSION}"
+    )
+
+    # Attach the icon into the bundle resources
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/GCLC.icns")
+      target_sources(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/GCLC.icns")
+      set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/GCLC.icns" PROPERTIES
+              MACOSX_PACKAGE_LOCATION "Resources"
+      )
+    endif()
+  endif()
+
 endif()
