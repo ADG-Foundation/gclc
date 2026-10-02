@@ -91,6 +91,26 @@ cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 if [ -d "${SRC_DIR}/flatpak" ]; then cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"; fi
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 
+# Copy auxiliary files and directories to the shadow root so CMake can install them
+cp -f "${SRC_DIR}/README.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
+cp -f "${SRC_DIR}/LICENSE.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
+
+# Copy manual PDF if present
+if [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
+  mkdir -p "${GCLC_SRC_SHADOW}/manual"
+  cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
+elif [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
+  mkdir -p "${GCLC_SRC_SHADOW}/manual"
+  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
+fi
+
+# Copy sample and support directories
+for dir in samples working_example LaTeX_packages XML_support; do
+  if [ -d "${SRC_DIR}/${dir}" ]; then
+    cp -r "${SRC_DIR}/${dir}" "${GCLC_SRC_SHADOW}/"
+  fi
+done
+
 cd "${GCLC_SRC_SHADOW}"
 
 # Generate Version.h
@@ -107,39 +127,6 @@ mkdir -p "${GCLC_BUILD_DIR}"
 cmake --build "${GCLC_BUILD_DIR}" --parallel "$(nproc)"
 cmake --install "${GCLC_BUILD_DIR}" --prefix "${APPDIR}/usr"
 rm -f "${APPDIR}/usr/bin/gclc"
-
-
-# ---------------------------------------------------------
-# Stage auxiliary files into AppDir
-# ---------------------------------------------------------
-echo ">>> Staging documentation, manual, and auxiliary assets into AppDir..."
-
-DOC_DIR="${APPDIR}/usr/share/doc/gclc"
-DATA_DIR="${APPDIR}/usr/share/gclc"
-
-mkdir -p "${DOC_DIR}"
-mkdir -p "${DATA_DIR}"
-
-# 1. Stage README and LICENSE
-cp -f "${SRC_DIR}/README.md" "${DOC_DIR}/" 2>/dev/null || true
-cp -f "${SRC_DIR}/LICENSE.md" "${DOC_DIR}/" 2>/dev/null || true
-
-# 2. Stage the compiled Manual PDF
-if [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
-  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${DOC_DIR}/"
-elif [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
-  cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${DOC_DIR}/"
-fi
-
-# 3. Stage samples, examples, and support files
-for dir in samples working_example LaTeX_packages XML_support; do
-  if [ -d "${SRC_DIR}/${dir}" ]; then
-    echo "    -> Copying ${dir}..."
-    cp -r "${SRC_DIR}/${dir}" "${DATA_DIR}/"
-    # Optionally symlink to doc/ for standard distro compatibility:
-    ln -s "../../gclc/${dir}" "${DOC_DIR}/${dir}" 2>/dev/null || true
-  fi
-done
 
 
 # ---------------------------------------------------------
