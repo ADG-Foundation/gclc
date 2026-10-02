@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 export DEBIAN_FRONTEND=noninteractive
+
+# ---------------------------------------------------------
+# Prepare build
+# ---------------------------------------------------------
 
 # Paths
 SRC_DIR="/app-src"
@@ -20,8 +23,9 @@ apt-get update && apt-get install -y --no-install-recommends \
   python3 python3-mako python3-setuptools python-is-python3 \
   nsis file ca-certificates imagemagick
 
+
 # ---------------------------------------------------------
-# Phase 1: Build or Reuse MXE Qt6 Toolchain
+# Build or Reuse MXE Qt6 Toolchain
 # ---------------------------------------------------------
 if [ -f "${MXE_DIR}/usr/bin/x86_64-w64-mingw32.static-cmake" ]; then
   echo ">>> [Cache Hit] Found MXE toolchain at ${MXE_DIR}."
@@ -36,8 +40,9 @@ fi
 
 export PATH="${MXE_DIR}/usr/bin:${PATH}"
 
+
 # ---------------------------------------------------------
-# Phase 2: Whitelist sources & Compile Binaries
+# Whitelist sources & Compile Binaries
 # ---------------------------------------------------------
 echo ">>> Preparing source files..."
 rm -rf "${GCLC_SRC_SHADOW}"
@@ -76,19 +81,39 @@ x86_64-w64-mingw32.static-cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
 
 x86_64-w64-mingw32.static-cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
 
+
 # ---------------------------------------------------------
-# Phase 3: Package Installer with NSIS
+# Package Installer with NSIS
 # ---------------------------------------------------------
 echo ">>> Creating NSIS installer..."
 STAGE_DIR="/tmp/gclc-installer-stage"
 rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}/executable"
 
-# Stage the executables and icon for NSIS
+# Executables and icon
 cp "${BUILD_DIR}/gclc.exe" "${STAGE_DIR}/executable/"
 cp "${BUILD_DIR}/source/gclc-gui.exe" "${STAGE_DIR}/executable/"
 cp "${GCLC_SRC_SHADOW}/source/app.ico" "${STAGE_DIR}/app.ico"
 cp "${SRC_DIR}/package/installer.nsi" "${STAGE_DIR}/"
+
+# Text documents & licenses
+cp "${SRC_DIR}/README.md" "${STAGE_DIR}/" 2>/dev/null || true
+cp "${SRC_DIR}/LICENSE.md" "${STAGE_DIR}/" 2>/dev/null || true
+
+# Manual PDF
+if [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
+  cp "${SRC_DIR}/source/manual/gclc_man.pdf" "${STAGE_DIR}/gclc_man.pdf"
+elif [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
+  cp "${SRC_DIR}/manual/gclc_man.pdf" "${STAGE_DIR}/gclc_man.pdf"
+fi
+
+# Directories (samples, examples, LaTeX/XML support)
+for dir in samples working_example LaTeX_packages XML_support; do
+  if [ -d "${SRC_DIR}/${dir}" ]; then
+    echo "    -> Staging ${dir}..."
+    cp -r "${SRC_DIR}/${dir}" "${STAGE_DIR}/"
+  fi
+done
 
 cd "${STAGE_DIR}"
 makensis installer.nsi

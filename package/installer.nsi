@@ -25,36 +25,73 @@ RequestExecutionLevel admin
 
 # Installation section
 Section "GCLC Application" SecMain
-  SetOutPath "$INSTDIR"
+    # Direct registry commands to the native 64-bit registry
+    SetRegView 64
 
-  # Bundle only the executables
-  File "executable\gclc-gui.exe"
-  File "executable\gclc.exe"
+    SetOutPath "$INSTDIR"
 
-  # Write uninstaller
-  WriteUninstaller "$INSTDIR\uninstall.exe"
+    # Core files
+    File "executable\gclc-gui.exe"
+    File "executable\gclc.exe"
+    File "app.ico"
 
-  # Start Menu Shortcuts
-  CreateDirectory "$SMPROGRAMS\GCLC"
-  CreateShortcut "$SMPROGRAMS\GCLC\GCLC.lnk" "$INSTDIR\gclc-gui.exe"
-  CreateShortcut "$SMPROGRAMS\GCLC\Uninstall GCLC.lnk" "$INSTDIR\uninstall.exe"
+    # Documentation and license files
+    File /nonfatal "README.md"
+    File /nonfatal "LICENSE.md"
+    File /nonfatal "gclc_man.pdf"
 
-  # Add to Windows Add/Remove Programs
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "DisplayName" "GCLC"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "DisplayIcon" "$INSTDIR\gclc-gui.exe"
+    # Recursive directory inclusions
+    File /nonfatal /r "samples"
+    File /nonfatal /r "working_example"
+    File /nonfatal /r "LaTeX_packages"
+    File /nonfatal /r "XML_support"
+
+    # Uninstaller generation
+    WriteUninstaller "$INSTDIR\uninstall.exe"
+
+    # Store installation folder for updates / installer detection
+    WriteRegStr HKLM "Software\GCLC" "Install_Dir" "$INSTDIR"
+
+    # Shortcuts
+    CreateDirectory "$SMPROGRAMS\GCLC"
+    CreateShortcut "$SMPROGRAMS\GCLC\GCLC.lnk" "$INSTDIR\gclc-gui.exe" "" "$INSTDIR\app.ico"
+    CreateShortcut "$SMPROGRAMS\GCLC\Manual.lnk" "$INSTDIR\gclc_man.pdf"
+
+    # Add to Windows Add/Remove Programs
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "DisplayName" "GCLC"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "DisplayIcon" "$INSTDIR\gclc-gui.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC" "Publisher" "ADG Foundation"
 SectionEnd
 
 # Uninstaller section
 Section "Uninstall"
-  Delete "$INSTDIR\gclc-gui.exe"
-  Delete "$INSTDIR\gclc.exe"
-  Delete "$INSTDIR\uninstall.exe"
+    SetRegView 64
 
-  Delete "$SMPROGRAMS\GCLC\GCLC.lnk"
-  Delete "$SMPROGRAMS\GCLC\Uninstall GCLC.lnk"
-  RMDir "$SMPROGRAMS\GCLC"
+    # Remove files
+    Delete "$INSTDIR\gclc-gui.exe"
+    Delete "$INSTDIR\gclc.exe"
+    Delete "$INSTDIR\app.ico"
+    Delete "$INSTDIR\README.md"
+    Delete "$INSTDIR\LICENSE.md"
+    Delete "$INSTDIR\gclc_man.pdf"
 
-  RMDir "$INSTDIR"
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC"
+    # Remove directories recursively
+    RMDir /r "$INSTDIR\samples"
+    RMDir /r "$INSTDIR\working_example"
+    RMDir /r "$INSTDIR\LaTeX_packages"
+    RMDir /r "$INSTDIR\XML_support"
+
+    # Shortcuts
+    Delete "$SMPROGRAMS\GCLC\GCLC.lnk"
+    Delete "$SMPROGRAMS\GCLC\Manual.lnk"
+    RMDir "$SMPROGRAMS\GCLC"
+
+    # Remove uninstaller and install dir
+    Delete "$INSTDIR\uninstall.exe"
+    RMDir "$INSTDIR"
+
+    # Clean up registry
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GCLC"
+    DeleteRegKey HKLM "Software\GCLC"
 SectionEnd
