@@ -31,7 +31,6 @@ help:
 	@echo "  make deb               - Build Debian (.deb) package"
 	@echo "  make rpm               - Build RPM (.rpm) package"
 	@echo "  make windows           - Build Windows installer"
-	@echo "  make mac               - Build macOS .app / .dmg bundle (only runs on native macOS)"
 	@echo "  make clean-dist        - Remove dist/ directory"
 	@echo "  make clean-cache       - Remove .build-cache/ directory"
 
@@ -95,10 +94,6 @@ windows:
 	  -e HOST_UID="$(HOST_UID)" \
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_UBUNTU) /build-windows.sh
-
-mac:
-	@mkdir -p "$(OUT_DIR)"
-	@bash "$(MAKEFILE_DIR)/build-mac.sh" "$(VERSION)"
 
 clean-dist:
 	rm -rf "$(OUT_DIR)"
