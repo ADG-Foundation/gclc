@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 export DEBIAN_FRONTEND=noninteractive
+
+# ---------------------------------------------------------
+# Prepare build
+# ---------------------------------------------------------
 
 # Detect machine architecture
 RAW_ARCH="$(uname -m)"
@@ -26,7 +29,7 @@ APPDIR="/tmp/AppDir"
 OUT_DIR="/out"
 SRC_DIR="/app-src"
 
-echo ">>> 1. Installing build dependencies and tools..."
+echo ">>> Installing build dependencies and tools..."
 apt-get update && apt-get install -y --no-install-recommends \
   cmake build-essential pkg-config git ca-certificates perl python3 wget file \
   libgl1-mesa-dev libglx-dev libegl1-mesa-dev libglu1-mesa-dev \
@@ -39,8 +42,9 @@ apt-get update && apt-get install -y --no-install-recommends \
   libxcb-xfixes0-dev libxcb-render-util0-dev libxcb-shape0-dev \
   libxcb-randr0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-xinerama0-dev
 
+
 # ---------------------------------------------------------
-# Phase 1: Build Static Qt (or reuse existing cache)
+# Build Static Qt (or reuse existing cache)
 # ---------------------------------------------------------
 if [ -f "${QT_INSTALL_DIR}/bin/qt-cmake" ]; then
   echo ">>> [Cache Hit] Found static Qt installation at ${QT_INSTALL_DIR}. Skipping Qt build."
@@ -70,10 +74,11 @@ else
   rm -rf "${QT_TMP_BUILD}"
 fi
 
+
 # ---------------------------------------------------------
-# Phase 2: Build GCLC and stage into AppDir
+# Build GCLC and stage into AppDir
 # ---------------------------------------------------------
-echo ">>> 2. Building GCLC GUI..."
+echo ">>> Building GCLC GUI..."
 rm -rf "${APPDIR}"
 mkdir -p "${APPDIR}/usr"
 
@@ -103,10 +108,44 @@ cmake --build "${GCLC_BUILD_DIR}" --parallel "$(nproc)"
 cmake --install "${GCLC_BUILD_DIR}" --prefix "${APPDIR}/usr"
 rm -f "${APPDIR}/usr/bin/gclc"
 
+
 # ---------------------------------------------------------
-# Phase 3: Package with linuxdeploy into AppImage
+# Stage auxiliary files into AppDir
 # ---------------------------------------------------------
-echo ">>> 3. Packaging into AppImage..."
+echo ">>> Staging documentation, manual, and auxiliary assets into AppDir..."
+
+DOC_DIR="${APPDIR}/usr/share/doc/gclc"
+DATA_DIR="${APPDIR}/usr/share/gclc"
+
+mkdir -p "${DOC_DIR}"
+mkdir -p "${DATA_DIR}"
+
+# 1. Stage README and LICENSE
+cp -f "${SRC_DIR}/README.md" "${DOC_DIR}/" 2>/dev/null || true
+cp -f "${SRC_DIR}/LICENSE.md" "${DOC_DIR}/" 2>/dev/null || true
+
+# 2. Stage the compiled Manual PDF
+if [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
+  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${DOC_DIR}/"
+elif [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
+  cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${DOC_DIR}/"
+fi
+
+# 3. Stage samples, examples, and support files
+for dir in samples working_example LaTeX_packages XML_support; do
+  if [ -d "${SRC_DIR}/${dir}" ]; then
+    echo "    -> Copying ${dir}..."
+    cp -r "${SRC_DIR}/${dir}" "${DATA_DIR}/"
+    # Optionally symlink to doc/ for standard distro compatibility:
+    ln -s "../../gclc/${dir}" "${DOC_DIR}/${dir}" 2>/dev/null || true
+  fi
+done
+
+
+# ---------------------------------------------------------
+# Package with linuxdeploy into AppImage
+# ---------------------------------------------------------
+echo ">>> Packaging into AppImage..."
 WORKDIR_DEPLOY="/tmp/linuxdeploy"
 mkdir -p "${WORKDIR_DEPLOY}" && cd "${WORKDIR_DEPLOY}"
 
@@ -137,6 +176,11 @@ cd "${OUT_DIR}"
 if [ -f "GCLC-${ARCH}.AppImage" ]; then
   mv "GCLC-${ARCH}.AppImage" "GCLC-${VERSION_STR}-${ARCH}.AppImage"
 fi
+
+
+# ---------------------------------------------------------
+# Cleanup
+# ---------------------------------------------------------
 
 # Restore host permissions
 if [ -n "${HOST_UID:-}" ] && [ -n "${HOST_GID:-}" ]; then
