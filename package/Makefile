@@ -23,10 +23,11 @@ else
   DOCKER_PLATFORM := linux/amd64
 endif
 
-.PHONY: help appimage deb rpm pacman windows clean-cache clean-dist
+.PHONY: help man appimage deb rpm pacman windows clean-cache clean-dist
 
 help:
 	@echo "Available packaging targets:"
+	@echo "  make man               - Build pdf manual"
 	@echo "  make appimage          - Build Linux AppImage"
 	@echo "  make deb               - Build Debian (.deb) package"
 	@echo "  make rpm               - Build RPM (.rpm) package"
@@ -34,7 +35,10 @@ help:
 	@echo "  make clean-dist        - Remove dist/ directory"
 	@echo "  make clean-cache       - Remove .build-cache/ directory"
 
-appimage:
+manual:
+	@bash "$(MAKEFILE_DIR)/build-man.sh"
+
+appimage: manual
 	@mkdir -p "$(OUT_DIR)" "$(CACHE_DIR)"
 	docker run --rm \
 	  --platform $(DOCKER_PLATFORM) \
@@ -47,7 +51,7 @@ appimage:
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_UBUNTU) /build-appimage.sh
 
-deb:
+deb: manual
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
 	  --platform $(DOCKER_PLATFORM) \
@@ -59,7 +63,7 @@ deb:
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_UBUNTU) /build-deb.sh
 
-rpm:
+rpm: manual
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
       --platform $(DOCKER_PLATFORM) \
@@ -71,7 +75,7 @@ rpm:
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_FEDORA) /build-rpm.sh
 
-pacman:
+pacman: manual
 	@mkdir -p "$(OUT_DIR)"
 	docker run --rm \
       --platform $(DOCKER_PLATFORM) \
@@ -83,7 +87,7 @@ pacman:
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_ARCH) /build-pacman.sh
 
-windows:
+windows: manual
 	@mkdir -p "$(OUT_DIR)" "$(CACHE_DIR)"
 	docker run --rm \
 	  -v "$(REPO_ROOT):/app-src:ro" \
