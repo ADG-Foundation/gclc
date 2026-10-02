@@ -6,7 +6,7 @@ OUT_DIR="/out"
 BUILD_DIR="/tmp/gclc-rpm-build"
 GCLC_SRC_SHADOW="/tmp/gclc-src"
 
-echo ">>> 1. Installing build dependencies..."
+echo ">>> Installing build dependencies..."
 dnf install -y \
     gcc-c++ \
     cmake \
@@ -17,7 +17,7 @@ dnf install -y \
     hicolor-icon-theme \
     libglvnd-devel
 
-echo ">>> 2. Whitelisting project source files..."
+echo ">>> Whitelisting project source files..."
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
@@ -25,7 +25,25 @@ cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 if [ -d "${SRC_DIR}/flatpak" ]; then cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"; fi
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 
-cd "${GCLC_SRC_SHADOW}"
+# Copy auxiliary files and directories to the shadow root so CMake can install them
+cp -f "${SRC_DIR}/README.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
+cp -f "${SRC_DIR}/LICENSE.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
+
+# Copy manual PDF if present
+if [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
+  mkdir -p "${GCLC_SRC_SHADOW}/manual"
+  cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
+elif [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
+  mkdir -p "${GCLC_SRC_SHADOW}/manual"
+  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
+fi
+
+# Copy sample and support directories
+for dir in samples working_example LaTeX_packages XML_support; do
+  if [ -d "${SRC_DIR}/${dir}" ]; then
+    cp -r "${SRC_DIR}/${dir}" "${GCLC_SRC_SHADOW}/"
+  fi
+done
 
 # Sanitize version string (RPM forbids leading 'v' and hyphens inside the version field)
 RAW_VER="${APP_VERSION:-2024.1.0}"
@@ -38,7 +56,7 @@ cat <<EOF > source/Utils/Version.h
 #define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
-echo ">>> 3. Configuring and building GCLC..."
+echo ">>> Configuring and building GCLC..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 
@@ -49,7 +67,7 @@ cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
 
 cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
 
-echo ">>> 4. Creating RPM package via CPack..."
+echo ">>> Creating RPM package via CPack..."
 cd "${BUILD_DIR}"
 cpack -G RPM
 

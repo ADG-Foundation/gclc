@@ -117,6 +117,31 @@ install(TARGETS gclc
 
 add_subdirectory(source)
 
+# Auxiliary Files & Documentation Installation
+install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+        OPTIONAL
+)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/manual/gclc_man.pdf")
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/manual/gclc_man.pdf"
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  )
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/source/manual/gclc_man.pdf")
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/source/manual/gclc_man.pdf"
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  )
+endif()
+
+foreach(AUX_DIR samples working_example LaTeX_packages XML_support)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${AUX_DIR}")
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${AUX_DIR}"
+            DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    )
+  endif()
+endforeach()
 
 # CPack
 if(NOT CPACK_PACKAGE_VERSION)
