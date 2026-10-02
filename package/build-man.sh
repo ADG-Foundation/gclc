@@ -54,6 +54,9 @@ HOST_GID="$(id -g)"
 docker run --rm \
   -v "${BUILD_TMP}:/doc" \
   -w /doc \
+  -e HOME=/doc \
+  -e TEXMFVAR=/doc/.texmf-var \
+  -e TEXMFCONFIG=/doc/.texmf-config \
   --user "${HOST_UID}:${HOST_GID}" \
   texlive/texlive:latest \
   sh -c "pdflatex -interaction=batchmode gclc_man.tex && pdflatex -interaction=batchmode gclc_man.tex"
