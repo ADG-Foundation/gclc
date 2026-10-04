@@ -31,6 +31,7 @@ help:
 	@echo "  make appimage          - Build Linux AppImage"
 	@echo "  make deb               - Build Debian (.deb) package"
 	@echo "  make rpm               - Build RPM (.rpm) package"
+	@echo "  make pacman            - Build Pacman (.pkg.tar.zst) package"
 	@echo "  make windows           - Build Windows installer"
 	@echo "  make clean-dist        - Remove dist/ directory"
 	@echo "  make clean-cache       - Remove .build-cache/ directory"
