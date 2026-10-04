@@ -27,9 +27,9 @@ jobs:
           fetch-depth: 0
 
       - name: Build .deb via Docker
-        run: make -C package deb VERSION=${{ github.ref_name }}
+        run: make -C packaging deb VERSION=${{ github.ref_name }}
 
-      - name: Verify generated Debian package
+      - name: Verify generated Debian packaging
         run: ls -lh dist/*.deb
 
       - name: Upload to Release

@@ -27,9 +27,9 @@ jobs:
           fetch-depth: 0
 
       - name: Build .rpm via Docker
-        run: make -C package rpm VERSION=${{ github.ref_name }}
+        run: make -C packaging rpm VERSION=${{ github.ref_name }}
 
-      - name: Verify generated RPM package
+      - name: Verify generated RPM packaging
         run: ls -lh dist/*.rpm
 
       - name: Upload to Release

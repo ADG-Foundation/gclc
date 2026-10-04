@@ -18,9 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Build .pkg.tar.zst via Docker (Arch Linux)
-        run: make -C package pacman VERSION=${{ github.ref_name }}
+        run: make -C packaging pacman VERSION=${{ github.ref_name }}
 
-      - name: Verify generated Pacman package
+      - name: Verify generated Pacman packaging
         run: ls -lh dist/*.pkg.tar.zst
 
       - name: Upload to Release

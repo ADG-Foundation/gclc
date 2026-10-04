@@ -46,7 +46,7 @@ RAW_VER="${APP_VERSION:-2024.1.0}"
 CLEAN_VER="${RAW_VER#v}"
 CLEAN_VER="${CLEAN_VER//-/.}"
 
-sed "s/@PKGVER@/${CLEAN_VER}/g" "${SRC_DIR}/package/PKGBUILD.in" > "${BUILD_DIR}/PKGBUILD"
+sed "s/@PKGVER@/${CLEAN_VER}/g" "${SRC_DIR}/packaging/PKGBUILD.in" > "${BUILD_DIR}/PKGBUILD"
 
 mkdir -p "${BUILD_DIR}/src/source/Utils"
 cat <<EOF > "${BUILD_DIR}/src/source/Utils/Version.h"

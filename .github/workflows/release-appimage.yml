@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0 # needed so git describe finds release tags
 
       - name: Build AppImage via Docker
-        run: make -C package appimage VERSION=${{ github.ref_name }}
+        run: make -C packaging appimage VERSION=${{ github.ref_name }}
 
       - name: Verify generated AppImage
         run: ls -lh dist/*.AppImage
