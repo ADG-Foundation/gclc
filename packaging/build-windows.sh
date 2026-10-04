@@ -94,7 +94,7 @@ mkdir -p "${STAGE_DIR}/executable"
 cp "${BUILD_DIR}/gclc.exe" "${STAGE_DIR}/executable/"
 cp "${BUILD_DIR}/source/gclc-gui.exe" "${STAGE_DIR}/executable/"
 cp "${GCLC_SRC_SHADOW}/source/app.ico" "${STAGE_DIR}/app.ico"
-cp "${SRC_DIR}/packages/installer.nsi" "${STAGE_DIR}/"
+cp "${SRC_DIR}/packaging/installer.nsi" "${STAGE_DIR}/"
 
 # Text documents & licenses
 cp "${SRC_DIR}/README.md" "${STAGE_DIR}/" 2>/dev/null || true
