@@ -116,3 +116,66 @@ install(TARGETS gclc
 )
 
 add_subdirectory(source)
+
+# Auxiliary Files & Documentation Installation
+install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+        OPTIONAL
+)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/manual/gclc_man.pdf")
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/manual/gclc_man.pdf"
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  )
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/source/manual/gclc_man.pdf")
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/source/manual/gclc_man.pdf"
+          DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  )
+endif()
+
+foreach(AUX_DIR samples working_example LaTeX_packages XML_support)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${AUX_DIR}")
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${AUX_DIR}"
+            DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+    )
+  endif()
+endforeach()
+
+# CPack
+if(NOT CPACK_PACKAGE_VERSION)
+  set(CPACK_PACKAGE_VERSION "2024.1.0")
+endif()
+
+set(CPACK_PACKAGE_NAME "gclc")
+set(CPACK_PACKAGE_VENDOR "ADG Foundation")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Geometry Constructions -> LaTeX Converter and theorem prover")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ADG-Foundation/gclc")
+set(CPACK_PACKAGE_CONTACT "Predrag Janicic <janicic@matf.bg.ac.rs>")
+
+# 2. Debian (.deb) Settings
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
+set(CPACK_DEBIAN_PACKAGE_SECTION "math")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+
+# Automatically scans ELF binaries for libc, libstdc++, and Qt6 library deps
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+# Explicitly add runtime plugins that are loaded via dlopen()
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-qpa-plugins, libxcb-cursor0")
+
+# 3. RPM (.rpm) Settings
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Engineering")
+set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+
+# Automatically scans symbols/sonames for glibc and Qt6 library requirements
+set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
+
+# Explicitly add runtime plugins that are loaded via dlopen()
+set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase-gui")
+
+# 4. Include CPack (Must remain at the very end of the file)
+include(CPack)

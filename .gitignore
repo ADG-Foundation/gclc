@@ -10,3 +10,7 @@ executable/gclc-gui
 *.log
 
 samples/*/*.svg
+
+
+.build-cache/
+dist/
