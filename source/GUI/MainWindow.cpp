@@ -768,9 +768,10 @@ void MainWindow::onEnableHighlighting() {
 void MainWindow::displayAbout() {
   QMessageBox::about(
       this, tr("About"),
-      tr("This is GCLC " GCLC_VERSION "\nDeveloped and copyright "
-         "(c) 1995-2025 by \nPredrag Janicic, University of "
-         "Belgrade.\nLicensed under the Creative Commons licence CC BY-ND."));
+      tr("This is GCLC " GCLC_VERSION ", distributed by the ADG Foundation.\n"
+        "Developed and copyright "
+        "(c) 1995-2025 by \nPredrag Janicic, University of "
+        "Belgrade.\nLicensed under the Creative Commons licence CC BY-ND."));
 }
 
 // --------------------------------------------------------------------------------------------
