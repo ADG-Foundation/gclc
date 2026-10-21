@@ -100,6 +100,13 @@ windows: manual
 	  -e HOST_GID="$(HOST_GID)" \
 	  $(DOCKER_UBUNTU) /build-windows.sh
 
+macos: manual
+	@mkdir -p "$(OUT_DIR)"
+	SRC_DIR="$(REPO_ROOT)" \
+	OUT_DIR="$(OUT_DIR)" \
+	APP_VERSION="$(VERSION)" \
+	bash "$(MAKEFILE_DIR)/build-macos.sh"
+
 clean-dist:
 	rm -rf "$(OUT_DIR)"
 
