@@ -12,16 +12,15 @@ CLEAN_VER="${CLEAN_VER//_/-}"
 
 echo ">>> Target version: ${CLEAN_VER}"
 
-# Pick up QT_DIR from GitHub Actions environment if set, else fallback to brew
-if [ -n "${QT_DIR:-}" ] && [ -d "${QT_DIR}" ]; then
-  QT_PATH="${QT_DIR}"
-else
-  QT_PATH="$(brew --prefix qt@6 2>/dev/null || echo '/usr/local/opt/qt@6')"
+# Locate Qt6 from aqtinstall QT_DIR or fallback
+QT_PATH="${QT_DIR:-$(brew --prefix qt@6 2>/dev/null || echo '/usr/local/opt/qt@6')}"
+if [ ! -d "${QT_PATH}" ]; then
+  echo "Error: Qt6 directory not found at ${QT_PATH}"
+  exit 1
 fi
-
 echo ">>> Using Qt6 from: ${QT_PATH}"
 
-echo ">>> Preparing source tree..."
+echo ">>> Preparing source shadow directory..."
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
@@ -30,12 +29,10 @@ cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 cp -f "${SRC_DIR}/README.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
 cp -f "${SRC_DIR}/LICENSE.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
 
+# Copy manual PDF if present
 if [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
   mkdir -p "${GCLC_SRC_SHADOW}/manual"
   cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
-elif [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
-  mkdir -p "${GCLC_SRC_SHADOW}/manual"
-  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
 fi
 
 for dir in samples working_example LaTeX_packages XML_support; do
@@ -52,12 +49,12 @@ cat <<EOF > source/Utils/Version.h
 #define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
-echo ">>> Configuring and building GCLC for Intel (x86_64)..."
+echo ">>> Configuring and building GCLC for macOS (x86_64)..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 
 cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
-  -GNinja \
+  -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_PREFIX_PATH="${QT_PATH}" \
   -DCMAKE_OSX_ARCHITECTURES="x86_64" \
@@ -65,16 +62,15 @@ cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
   -Dgui=ON \
   -DCPACK_PACKAGE_VERSION="${CLEAN_VER}"
 
-cmake --build "${BUILD_DIR}" --parallel "$(sysctl -n hw.ncpu)"
+cmake --build "${BUILD_DIR}"
 
-# Deploy Qt frameworks into the app bundle if present
 APP_BUNDLE=$(find "${BUILD_DIR}" -maxdepth 3 -name "*.app" -type d | head -n 1)
 if [ -n "${APP_BUNDLE}" ]; then
-  echo ">>> Bundling Qt libraries into ${APP_BUNDLE}..."
+  echo ">>> Bundling Qt dependencies via macdeployqt..."
   "${QT_PATH}/bin/macdeployqt" "${APP_BUNDLE}" -always-overwrite || true
 fi
 
-echo ">>> Packaging via CPack..."
+echo ">>> Generating installer packages..."
 cd "${BUILD_DIR}"
 cpack -G DragNDrop || cpack -G ZIP
 
@@ -82,4 +78,4 @@ mkdir -p "${OUT_DIR}"
 cp -f *.dmg "${OUT_DIR}/" 2>/dev/null || true
 cp -f *.zip "${OUT_DIR}/" 2>/dev/null || true
 
-echo ">>> Build complete! Artifacts located in ${OUT_DIR}"
+echo ">>> Build completed successfully."
