@@ -5,6 +5,9 @@ SRC_DIR="${SRC_DIR:-$(pwd)}"
 OUT_DIR="${OUT_DIR:-${SRC_DIR}/dist}"
 BUILD_DIR="/tmp/gclc-mac-build"
 GCLC_SRC_SHADOW="/tmp/gclc-src"
+INSTALL_STAGING="/tmp/gclc-mac-staging"
+QT_CACHE_DIR="${QT_CACHE_DIR:-/tmp/Qt}"
+QT_VERSION="6.6.3"
 
 RAW_VER="${APP_VERSION:-dev}"
 CLEAN_VER="${RAW_VER#v}"
@@ -12,21 +15,28 @@ CLEAN_VER="${CLEAN_VER//_/-}"
 
 echo ">>> Target version: ${CLEAN_VER}"
 
-# Locate Qt6 from aqtinstall QT_DIR or fallback
-QT_PATH="${QT_DIR:-$(brew --prefix qt@6 2>/dev/null || echo '/usr/local/opt/qt@6')}"
+if ! command -v cmake &>/dev/null || ! command -v ninja &>/dev/null; then
+  echo ">>> Installing missing build tools (cmake, ninja)..."
+  brew install cmake ninja
+fi
+
+# install Qt 6.6.3 (clang_64) via aqtinstall
+QT_PATH="${QT_DIR:-${QT_CACHE_DIR}/${QT_VERSION}/macos}"
 if [ ! -d "${QT_PATH}" ]; then
-  echo "Error: Qt6 directory not found at ${QT_PATH}"
-  exit 1
+  echo ">>> Pre-built Qt not found at ${QT_PATH}. Installing via aqtinstall..."
+  python3 -m pip install --break-system-packages aqtinstall 2>/dev/null || python3 -m pip install aqtinstall
+  python3 -m aqt install-qt mac desktop "${QT_VERSION}" clang_64 --outputdir "${QT_CACHE_DIR}"
 fi
 echo ">>> Using Qt6 from: ${QT_PATH}"
 
+# Prepare Shadow Source Tree
 echo ">>> Preparing source shadow directory..."
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
 cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
-# Ensure the flatpak directory is copied if it exists
+
 if [ -d "${SRC_DIR}/flatpak" ]; then
   cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"
 fi
@@ -56,6 +66,7 @@ cat <<EOF > source/Utils/Version.h
 #define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
+# Configure & Compile (Cross-targeting Intel x86_64)
 echo ">>> Configuring and building GCLC for macOS (x86_64)..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
@@ -72,19 +83,20 @@ cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
 
 cmake --build "${BUILD_DIR}"
 
+# Staging & App Restructuring
 echo ">>> Preparing installation directory for packaging..."
-INSTALL_STAGING="/tmp/gclc-mac-staging"
 rm -rf "${INSTALL_STAGING}"
 cmake --install "${BUILD_DIR}" --prefix "${INSTALL_STAGING}"
 
-# moving gclc-gui to the right place
+# Reposition .app out of bin/ if CMake nested it
 if [ -d "${INSTALL_STAGING}/bin/gclc-gui.app" ]; then
+  echo ">>> Moving gclc-gui.app from bin/ to bundle root..."
   mv "${INSTALL_STAGING}/bin/gclc-gui.app" "${INSTALL_STAGING}/GCLC.app"
 fi
 
+APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 2 -name "*.app" -type d | head -n 1)
 
-# Run macdeployqt on the installed staging .app bundle
-APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 3 -name "*.app" -type d | head -n 1)
+# Deploy Qt Frameworks & Write qt.conf
 if [ -n "${APP_BUNDLE}" ]; then
   echo ">>> Bundling Qt dependencies via macdeployqt into ${APP_BUNDLE}..."
   mkdir -p "${APP_BUNDLE}/Contents/Frameworks"
@@ -92,24 +104,24 @@ if [ -n "${APP_BUNDLE}" ]; then
     -always-overwrite \
     -libpath="${QT_PATH}/lib" \
     -verbose=2 || true
-fi
 
-mkdir -p "${APP_BUNDLE}/Contents/Resources"
-# Explicitly create qt.conf
-cat <<'EOF' > "${APP_BUNDLE}/Contents/Resources/qt.conf"
+  # Ensure qt.conf exists to map plugins and frameworks
+  mkdir -p "${APP_BUNDLE}/Contents/Resources"
+  cat <<'EOF' > "${APP_BUNDLE}/Contents/Resources/qt.conf"
 [Paths]
 Prefix = ..
 Plugins = PlugIns
 Frameworks = Frameworks
 EOF
+fi
 
+# Package DMG and ZIP
 echo ">>> Generating installer packages..."
 mkdir -p "${OUT_DIR}"
 
 if [ -n "${APP_BUNDLE}" ]; then
   hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.dmg" || true
-
   (cd "${INSTALL_STAGING}" && zip -ry "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
 fi
 
-echo ">>> Build completed successfully! Packages in ${OUT_DIR}"
+echo ">>> Build completed successfully! Packages located in ${OUT_DIR}"
