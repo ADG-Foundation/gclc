@@ -135,6 +135,8 @@ if(gui)
             MACOSX_BUNDLE_ICON_FILE "GCLC.icns"
             MACOSX_BUNDLE_SHORT_VERSION_STRING "${GCLC_VERSION}"
             MACOSX_BUNDLE_BUNDLE_VERSION "${GCLC_VERSION}"
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "@executable_path/../Frameworks"
     )
 
     # Attach the icon into the bundle resources

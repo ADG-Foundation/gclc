@@ -29,8 +29,8 @@ jobs:
 
       - name: Install Pre-built Intel Qt 6
         run: |
-          # Downloads official pre-compiled macOS Qt binaries (contains x86_64)
-          python -m aqt install-qt mac desktop 6.6.3 clang_64 --outputdir ${{ runner.temp }}/Qt
+          python -m aqt install-qt mac desktop 6.6.3 clang_64 \
+            --outputdir "${{ runner.temp }}/Qt"
 
       - name: Build macOS Intel Artifacts
         env:

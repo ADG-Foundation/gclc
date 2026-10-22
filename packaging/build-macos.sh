@@ -81,7 +81,11 @@ cmake --install "${BUILD_DIR}" --prefix "${INSTALL_STAGING}"
 APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 3 -name "*.app" -type d | head -n 1)
 if [ -n "${APP_BUNDLE}" ]; then
   echo ">>> Bundling Qt dependencies via macdeployqt into ${APP_BUNDLE}..."
-  "${QT_PATH}/bin/macdeployqt" "${APP_BUNDLE}" -always-overwrite || true
+  mkdir -p "${APP_BUNDLE}/Contents/Frameworks"
+  "${QT_PATH}/bin/macdeployqt" "${APP_BUNDLE}" \
+    -always-overwrite \
+    -libpath="${QT_PATH}/lib" \
+    -verbose=2 || true
 fi
 
 echo ">>> Generating installer packages..."
