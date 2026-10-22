@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-macos-x86_64:
-    runs-on: macos-15-intel
+    runs-on: macos-14 # Fast Apple Silicon runner with prebuilt bottles
     permissions:
       contents: write
 
@@ -17,18 +17,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: |
-          brew update
-          brew install cmake qt@6 ninja
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Build macOS Artifacts
+      - name: Install Build Tools
+        run: |
+          brew install cmake ninja
+          pip install aqtinstall
+
+      - name: Install Pre-built Intel Qt 6
+        run: |
+          # Downloads official pre-compiled macOS Qt binaries (contains x86_64)
+          python -m aqt install-qt mac desktop 6.6.3 clang_64 --outputdir ${{ runner.temp }}/Qt
+
+      - name: Build macOS Intel Artifacts
+        env:
+          QT_DIR: ${{ runner.temp }}/Qt/6.6.3/macos
         run: |
           make -C packaging macos VERSION=${{ github.ref_name || 'dev' }}
 
       - name: Verify generated packages
         run: |
           ls -lh dist/
+          # Optional: Verify architecture is x86_64
+          file dist/* || true
 
       - name: Upload to Release
         if: github.event_name == 'release'
