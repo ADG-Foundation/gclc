@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ensure running on macOS
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "Error: This script must be run on macOS (detected: $(uname -s))." >&2
+  exit 1
+fi
+
+if [ "$(uname -m)" != "x86_64" ]; then
+  echo ">>> Host architecture is $(uname -m). Cross-compiling for target x86_64..."
+fi
+
 SRC_DIR="${SRC_DIR:-$(pwd)}"
 OUT_DIR="${OUT_DIR:-${SRC_DIR}/dist}"
 BUILD_DIR="/tmp/gclc-mac-build"
