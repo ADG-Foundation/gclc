@@ -91,15 +91,10 @@ fi
 echo ">>> Generating installer packages..."
 mkdir -p "${OUT_DIR}"
 
-# If an .app bundle exists, package the installed bundle into a DMG or ZIP directly
 if [ -n "${APP_BUNDLE}" ]; then
-  echo ">>> Creating DMG from installed bundle..."
   hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.dmg" || true
-  (cd "${INSTALL_STAGING}" && zip -r "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
-else
-  cd "${BUILD_DIR}"
-  cpack -G ZIP
-  cp -f *.zip "${OUT_DIR}/" 2>/dev/null || true
+
+  (cd "${INSTALL_STAGING}" && zip -ry "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
 fi
 
 echo ">>> Build completed successfully! Packages in ${OUT_DIR}"
