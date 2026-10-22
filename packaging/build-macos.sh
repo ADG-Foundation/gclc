@@ -137,12 +137,14 @@ mkdir -p "${OUT_DIR}"
 
 PACKAGE_FILE_NAME="gclc-${CLEAN_VER}-Darwin-x86_64"
 
-hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/${PACKAGE_FILE_NAME}.dmg" || true
+hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/${PACKAGE_FILE_NAME}.dmg"
 
 NAMED_DIR="/tmp/${PACKAGE_FILE_NAME}"
-rm -rf "${PACKAGE_FILE_NAME}"
-mv "${INSTALL_STAGING}" "${PACKAGE_FILE_NAME}"
-cd "$(dirname "${NAMED_DIR}")"
-zip -ry "${OUT_DIR}/${PACKAGE_FILE_NAME}.zip" "$(basename "${NAMED_DIR}")"
+rm -rf "${NAMED_DIR}"
+mv "${INSTALL_STAGING}" "${NAMED_DIR}"
+
+(cd /tmp && zip -ry "${OUT_DIR}/${PACKAGE_FILE_NAME}.zip" "${PACKAGE_FILE_NAME}")
+
+rm -rf "${NAMED_DIR}"
 
 echo ">>> Build completed successfully! Packages located in ${OUT_DIR}"
