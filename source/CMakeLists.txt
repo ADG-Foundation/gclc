@@ -104,23 +104,25 @@ if(gui)
   )
 
   # install desktop integration
-  set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
+  if(UNIX AND NOT APPLE)
+    set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
 
-  install(FILES "../flatpak/${GCLC_APP_ID}.desktop"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
-  )
-
-  install(FILES "../flatpak/${GCLC_APP_ID}.metainfo.xml"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
-  )
-
-  set(ICON_RESOLUTIONS "32;64;128;256;512")
-  foreach(RES IN LISTS ICON_RESOLUTIONS)
-    install(FILES "../flatpak/icon/${RES}.png"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
-            RENAME "${GCLC_APP_ID}.png"
+    install(FILES "../flatpak/${GCLC_APP_ID}.desktop"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
     )
-  endforeach ()
+
+    install(FILES "../flatpak/${GCLC_APP_ID}.metainfo.xml"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+    )
+
+    set(ICON_RESOLUTIONS "32;64;128;256;512")
+    foreach(RES IN LISTS ICON_RESOLUTIONS)
+      install(FILES "../flatpak/icon/${RES}.png"
+              DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
+              RENAME "${GCLC_APP_ID}.png"
+      )
+    endforeach()
+  endif()
 
   if(WIN32)
     target_sources(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gclc.rc")

@@ -77,6 +77,12 @@ INSTALL_STAGING="/tmp/gclc-mac-staging"
 rm -rf "${INSTALL_STAGING}"
 cmake --install "${BUILD_DIR}" --prefix "${INSTALL_STAGING}"
 
+# moving gclc-gui to the right place
+if [ -d "${INSTALL_STAGING}/bin/gclc-gui.app" ]; then
+  mv "${INSTALL_STAGING}/bin/gclc-gui.app" "${INSTALL_STAGING}/GCLC.app"
+fi
+
+
 # Run macdeployqt on the installed staging .app bundle
 APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 3 -name "*.app" -type d | head -n 1)
 if [ -n "${APP_BUNDLE}" ]; then
@@ -87,6 +93,15 @@ if [ -n "${APP_BUNDLE}" ]; then
     -libpath="${QT_PATH}/lib" \
     -verbose=2 || true
 fi
+
+mkdir -p "${APP_BUNDLE}/Contents/Resources"
+# Explicitly create qt.conf
+cat <<'EOF' > "${APP_BUNDLE}/Contents/Resources/qt.conf"
+[Paths]
+Prefix = ..
+Plugins = PlugIns
+Frameworks = Frameworks
+EOF
 
 echo ">>> Generating installer packages..."
 mkdir -p "${OUT_DIR}"
