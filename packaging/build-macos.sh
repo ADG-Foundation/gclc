@@ -140,7 +140,7 @@ PACKAGE_FILE_NAME="gclc-${CLEAN_VER}-Darwin-x86_64"
 hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/${PACKAGE_FILE_NAME}.dmg" || true
 
 NAMED_DIR="/tmp/${PACKAGE_FILE_NAME}"
-rm -r "${PACKAGE_FILE_NAME}"
+rm -rf "${PACKAGE_FILE_NAME}"
 mv "${INSTALL_STAGING}" "${PACKAGE_FILE_NAME}"
 cd "$(dirname "${NAMED_DIR}")"
 zip -ry "${OUT_DIR}/${PACKAGE_FILE_NAME}.zip" "$(basename "${NAMED_DIR}")"
