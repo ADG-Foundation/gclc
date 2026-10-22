@@ -106,6 +106,12 @@ fi
 
 APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 2 -name "*.app" -type d | head -n 1)
 
+# Verify the .app bundle exists, fail otherwise
+if [ -z "${APP_BUNDLE}" ] || [ ! -d "${APP_BUNDLE}" ]; then
+  echo "Error: No .app bundle found in ${INSTALL_STAGING}!" >&2
+  exit 1
+fi
+
 # Deploy Qt Frameworks & Write qt.conf
 if [ -n "${APP_BUNDLE}" ]; then
   echo ">>> Bundling Qt dependencies via macdeployqt into ${APP_BUNDLE}..."
@@ -129,9 +135,7 @@ fi
 echo ">>> Generating installer packages..."
 mkdir -p "${OUT_DIR}"
 
-if [ -n "${APP_BUNDLE}" ]; then
-  hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.dmg" || true
-  (cd "${INSTALL_STAGING}" && zip -ry "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
-fi
+hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.dmg" || true
+(cd "${INSTALL_STAGING}" && zip -ry "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
 
 echo ">>> Build completed successfully! Packages located in ${OUT_DIR}"
