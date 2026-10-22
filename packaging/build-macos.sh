@@ -26,6 +26,10 @@ mkdir -p "${GCLC_SRC_SHADOW}"
 
 cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
+# Ensure the flatpak directory is copied if it exists
+if [ -d "${SRC_DIR}/flatpak" ]; then
+  cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"
+fi
 cp -f "${SRC_DIR}/README.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
 cp -f "${SRC_DIR}/LICENSE.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
 
@@ -33,6 +37,9 @@ cp -f "${SRC_DIR}/LICENSE.md" "${GCLC_SRC_SHADOW}/" 2>/dev/null || true
 if [ -f "${SRC_DIR}/manual/gclc_man.pdf" ]; then
   mkdir -p "${GCLC_SRC_SHADOW}/manual"
   cp -f "${SRC_DIR}/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
+elif [ -f "${SRC_DIR}/source/manual/gclc_man.pdf" ]; then
+  mkdir -p "${GCLC_SRC_SHADOW}/manual"
+  cp -f "${SRC_DIR}/source/manual/gclc_man.pdf" "${GCLC_SRC_SHADOW}/manual/"
 fi
 
 for dir in samples working_example LaTeX_packages XML_support; do
@@ -59,23 +66,36 @@ cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
   -DCMAKE_PREFIX_PATH="${QT_PATH}" \
   -DCMAKE_OSX_ARCHITECTURES="x86_64" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="11.0" \
+  -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
   -Dgui=ON \
   -DCPACK_PACKAGE_VERSION="${CLEAN_VER}"
 
 cmake --build "${BUILD_DIR}"
 
-APP_BUNDLE=$(find "${BUILD_DIR}" -maxdepth 3 -name "*.app" -type d | head -n 1)
+echo ">>> Preparing installation directory for packaging..."
+INSTALL_STAGING="/tmp/gclc-mac-staging"
+rm -rf "${INSTALL_STAGING}"
+cmake --install "${BUILD_DIR}" --prefix "${INSTALL_STAGING}"
+
+# Run macdeployqt on the installed staging .app bundle
+APP_BUNDLE=$(find "${INSTALL_STAGING}" -maxdepth 3 -name "*.app" -type d | head -n 1)
 if [ -n "${APP_BUNDLE}" ]; then
-  echo ">>> Bundling Qt dependencies via macdeployqt..."
+  echo ">>> Bundling Qt dependencies via macdeployqt into ${APP_BUNDLE}..."
   "${QT_PATH}/bin/macdeployqt" "${APP_BUNDLE}" -always-overwrite || true
 fi
 
 echo ">>> Generating installer packages..."
-cd "${BUILD_DIR}"
-cpack -G DragNDrop || cpack -G ZIP
-
 mkdir -p "${OUT_DIR}"
-cp -f *.dmg "${OUT_DIR}/" 2>/dev/null || true
-cp -f *.zip "${OUT_DIR}/" 2>/dev/null || true
 
-echo ">>> Build completed successfully."
+# If an .app bundle exists, package the installed bundle into a DMG or ZIP directly
+if [ -n "${APP_BUNDLE}" ]; then
+  echo ">>> Creating DMG from installed bundle..."
+  hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.dmg" || true
+  (cd "${INSTALL_STAGING}" && zip -r "${OUT_DIR}/gclc-${CLEAN_VER}-Darwin-x86_64.zip" .)
+else
+  cd "${BUILD_DIR}"
+  cpack -G ZIP
+  cp -f *.zip "${OUT_DIR}/" 2>/dev/null || true
+fi
+
+echo ">>> Build completed successfully! Packages in ${OUT_DIR}"
