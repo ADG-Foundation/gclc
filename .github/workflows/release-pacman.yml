@@ -1,4 +1,4 @@
-name: Build Pacman Package
+name: Build Pacman Package for Release
 
 on:
   release:

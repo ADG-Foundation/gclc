@@ -99,27 +99,30 @@ if(gui)
     PRIVATE Qt6::Core Qt6::Gui Qt6::PrintSupport Qt6::Widgets)
 
   install(TARGETS gclc-gui
-          DESTINATION ${CMAKE_INSTALL_BINDIR}
+          BUNDLE DESTINATION .
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 
   # install desktop integration
-  set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
+  if(UNIX AND NOT APPLE)
+    set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
 
-  install(FILES "../flatpak/${GCLC_APP_ID}.desktop"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
-  )
-
-  install(FILES "../flatpak/${GCLC_APP_ID}.metainfo.xml"
-          DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
-  )
-
-  set(ICON_RESOLUTIONS "32;64;128;256;512")
-  foreach(RES IN LISTS ICON_RESOLUTIONS)
-    install(FILES "../flatpak/icon/${RES}.png"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
-            RENAME "${GCLC_APP_ID}.png"
+    install(FILES "../flatpak/${GCLC_APP_ID}.desktop"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
     )
-  endforeach ()
+
+    install(FILES "../flatpak/${GCLC_APP_ID}.metainfo.xml"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+    )
+
+    set(ICON_RESOLUTIONS "32;64;128;256;512")
+    foreach(RES IN LISTS ICON_RESOLUTIONS)
+      install(FILES "../flatpak/icon/${RES}.png"
+              DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
+              RENAME "${GCLC_APP_ID}.png"
+      )
+    endforeach()
+  endif()
 
   if(WIN32)
     target_sources(gclc-gui PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/gclc.rc")
@@ -135,6 +138,8 @@ if(gui)
             MACOSX_BUNDLE_ICON_FILE "GCLC.icns"
             MACOSX_BUNDLE_SHORT_VERSION_STRING "${GCLC_VERSION}"
             MACOSX_BUNDLE_BUNDLE_VERSION "${GCLC_VERSION}"
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH "@executable_path/../Frameworks"
     )
 
     # Attach the icon into the bundle resources
