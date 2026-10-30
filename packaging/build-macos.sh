@@ -7,10 +7,6 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
-if [ "$(uname -m)" != "x86_64" ]; then
-  echo ">>> Host architecture is $(uname -m). Cross-compiling for target x86_64..."
-fi
-
 SRC_DIR="${SRC_DIR:-$(pwd)}"
 OUT_DIR="${OUT_DIR:-${SRC_DIR}/dist}"
 BUILD_DIR="/tmp/gclc-mac-build"
@@ -76,8 +72,8 @@ cat <<EOF > source/Utils/Version.h
 #define GCLC_VERSION "${CLEAN_VER}"
 EOF
 
-# Configure & Compile (Cross-targeting Intel x86_64)
-echo ">>> Configuring and building GCLC for macOS (x86_64)..."
+# Configure & Compile
+echo ">>> Configuring and building GCLC..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 
@@ -135,7 +131,7 @@ fi
 echo ">>> Generating installer packages..."
 mkdir -p "${OUT_DIR}"
 
-PACKAGE_FILE_NAME="gclc-${CLEAN_VER}-Darwin-x86_64"
+PACKAGE_FILE_NAME="gclc-${CLEAN_VER}-Darwin"
 
 hdiutil create -volname "GCLC" -srcfolder "${INSTALL_STAGING}" -ov -format UDZO "${OUT_DIR}/${PACKAGE_FILE_NAME}.dmg"
 
