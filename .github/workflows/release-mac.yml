@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build macOS Package via Makefile
+      - name: Build macOS Package
         run: make -C packaging macos VERSION=${{ github.ref_name }}
 
       - name: Upload to Release
