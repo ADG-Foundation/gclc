@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request_target:
-    branches: [master]
+    branches: [ master ]
 
 jobs:
   buildAndDownload:
@@ -47,7 +47,7 @@ jobs:
 
   outputTests:
     runs-on: ubuntu-latest
-    needs: [buildAndDownload]
+    needs: [ buildAndDownload ]
     steps:
       - name: Download test files
         uses: actions/download-artifact@v4
@@ -62,7 +62,7 @@ jobs:
 
   proofTests:
     runs-on: ubuntu-latest
-    needs: [buildAndDownload]
+    needs: [ buildAndDownload ]
     steps:
       - name: Download test files
         uses: actions/download-artifact@v4
