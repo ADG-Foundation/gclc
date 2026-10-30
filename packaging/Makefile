@@ -23,11 +23,11 @@ else
   DOCKER_PLATFORM := linux/amd64
 endif
 
-.PHONY: help man appimage deb rpm pacman windows clean-cache clean-dist
+.PHONY: help manual appimage deb rpm pacman windows macos clean-cache clean-dist
 
 help:
 	@echo "Available packaging targets:"
-	@echo "  make man               - Build pdf manual"
+	@echo "  make manual            - Build pdf manual"
 	@echo "  make appimage          - Build Linux AppImage"
 	@echo "  make deb               - Build Debian (.deb) package"
 	@echo "  make rpm               - Build RPM (.rpm) package"
