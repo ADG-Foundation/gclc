@@ -1,4 +1,4 @@
-name: Build AppImage for Release
+name: Build and Release Appimage Package
 
 on:
   release:
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # needed so git describe finds release tags
+          fetch-depth: 0
 
       - name: Build AppImage via Docker
         run: make -C packaging appimage VERSION=${{ github.ref_name }}
