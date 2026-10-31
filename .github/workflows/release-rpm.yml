@@ -1,8 +1,8 @@
-name: Build RPM Package for Release
+name: Build and Release RPM Package
 
 on:
   release:
-    types: [published]
+    types: [ published ]
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build .rpm via Docker
+      - name: Build .rpm
         run: make -C packaging rpm VERSION=${{ github.ref_name }}
 
       - name: Verify generated RPM packaging

@@ -1,8 +1,8 @@
-name: Build Windows Installer for Release
+name: Build and Release Windows Installer
 
 on:
   release:
-    types: [published]
+    types: [ published ]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build Windows Installer via Docker
+      - name: Build Windows Installer
         run: make -C packaging windows VERSION=${{ github.ref_name }}
 
       - name: Verify generated installer

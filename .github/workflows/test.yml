@@ -1,20 +1,18 @@
-name: Test
+name: Run Tests
 
 on:
-  pull_request_target:
-    branches: [master]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   buildAndDownload:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Make CLI version
         run: |
@@ -47,7 +45,7 @@ jobs:
 
   outputTests:
     runs-on: ubuntu-latest
-    needs: [buildAndDownload]
+    needs: [ buildAndDownload ]
     steps:
       - name: Download test files
         uses: actions/download-artifact@v4
@@ -62,7 +60,7 @@ jobs:
 
   proofTests:
     runs-on: ubuntu-latest
-    needs: [buildAndDownload]
+    needs: [ buildAndDownload ]
     steps:
       - name: Download test files
         uses: actions/download-artifact@v4
